@@ -4,23 +4,27 @@ import scrapy
 class WorkUaJobsSpider(scrapy.Spider):
     name = "jobs"
     allowed_domains = ["work.ua"]
-    start_urls = ["https://www.work.ua/en/jobs-python+developer/"]
+    start_urls = ["https://www.work.ua/en/jobs-python/"]
+    total_pages = 0
 
     def parse(self, response):
-        jobs = response.xpath("//div[@class='mb-lg mt-lg sm:mt-xl']")
+        job_blocks = response.xpath("//div[contains(@class, 'job-link')]")
 
-        for job in jobs:
-            link = response.urljoin(job.xpath(".//h2/a/@href").get())
+        for job_block in job_blocks:
+            link = job_block.xpath(".//h2/a/@href").get()
+            if link:
+                link = response.urljoin(link)
+                yield response.follow(link, self.parse_job_details, meta={"link": link})
 
-            yield response.follow(link, self.parse_job_details, meta={"link": link})
+        if not self.total_pages:
+            page_info = response.xpath("//span[@class='text-default']/@title").get()
+            if page_info:
+                self.total_pages = int(page_info.split("of ")[-1].strip())
+                self.logger.info(f"Total pages: {self.total_pages}")
 
-        next_page = response.xpath(
-            "//a[contains(@class, 'ga-pagination-default') and contains(@href, '?page=')]/@href"
-        ).get()
-
-        if next_page:
-
-            yield response.follow(next_page, self.parse)
+                for page_number in range(2, self.total_pages + 1):
+                    next_page_url = response.urljoin(f"?page={page_number}")
+                    yield response.follow(next_page_url, self.parse)
 
     def parse_job_details(self, response):
         link = response.meta["link"]
