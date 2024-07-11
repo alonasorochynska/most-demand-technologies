@@ -1,0 +1,10 @@
+aiohttp==3.9.5
+asyncio==3.4.3
+deep-translator==1.11.4
+jupyter==1.0.0
+matplotlib==3.9.1
+matplotlib-inline==0.1.7
+pandas==2.2.2
+Scrapy==2.11.2
+seaborn==0.13.2
+wordcloud==1.9.3
